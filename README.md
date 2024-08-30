@@ -11,5 +11,7 @@ pipenv shell
 ```
 
 ```
-streamlit
+export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
+
+streamlit run stc/app.py
 ```

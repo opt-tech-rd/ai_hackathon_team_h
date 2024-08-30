@@ -15,5 +15,5 @@ export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 
 python src/build_index.py
 
-streamlit run stc/app.py
+streamlit run src/app.py
 ```

@@ -1,6 +1,24 @@
 import os
 import streamlit as st
+import pandas as pd
 from llama_index.core import StorageContext, load_index_from_storage
+
+
+def convert_df_to_markdown(input_df: pd.DataFrame) -> str:
+    return input_df.to_markdown(index=False)
+
+
+def load_data() -> None:
+    file_path = st.session_state.file_uploader
+
+    try:
+        st.session_state.file_df = pd.read_csv(
+            file_path, header=2, encoding="utf-8-sig"
+        )
+    except FileNotFoundError:
+        st.error("ファイルのアップロードに失敗しました。")
+        st.button("最初の画面に戻る")
+        st.stop()
 
 
 def load_index():
@@ -16,7 +34,7 @@ def load_index():
 
 
 def main() -> None:
-    st.title("RAG Chatbot")
+    st.markdown("### 運用施策回答BOT")
 
     if "messages" not in st.session_state:
         system_prompt = (
@@ -27,11 +45,22 @@ def main() -> None:
         )
         st.session_state.messages = [
             {"role": "system", "content": system_prompt},
-            {
-                "role": "assistant",
-                "content": "何か手伝えることはありますか？なんでもおっしゃってください。",
-            },
+            # {
+            #     "role": "assistant",
+            #     "content": "ファイルをアップロードして、要因分析に関する質問をしてください。",
+            # },
         ]
+
+    with st.chat_message("assistant"):
+        st.write(
+            "ファイルをアップロードして、変動要因の箇所を示した上で質問してください。"
+        )
+        st.file_uploader(
+            "",
+            type=["csv"],
+            key="file_uploader",
+            label_visibility="collapsed",
+        )
 
     if "query_engine" not in st.session_state:
         st.session_state.query_engine = load_index()
@@ -45,10 +74,10 @@ def main() -> None:
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
+        load_data()
+        prompt += f"以下のCSVからマークダウンに変換された添付ファイルを参照してください。{convert_df_to_markdown(st.session_state.file_df)}"
         response = st.session_state.query_engine.query(prompt)
-        st.session_state.messages.append(
-            {"role": "assistant", "content": f"{response}"}
-        )
+        st.session_state.messages.append({"role": "assistant", "content": response})
         st.chat_message("assistant").write(f"{response}")
 
 

@@ -8,6 +8,7 @@ streamlit = "*"
 openai = "*"
 llama-index = "*"
 setuptools = "*"
+tabulate = "*"
 
 [dev-packages]
 

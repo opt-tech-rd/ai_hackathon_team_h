@@ -37,12 +37,15 @@ def main() -> None:
     st.markdown("### 運用施策回答BOT")
 
     if "messages" not in st.session_state:
-        system_prompt = (
-            "Your purpose is to answer questions about specific documents only. "
-            "Please answer the user's questions based on what you know about the document. "
-            "If the question is outside scope of the document, please politely decline. "
-            "If you don't know the answer, say `I don't know`. "
-        )
+        system_prompt = """
+            Your purpose is to answer questions about specific documents only. 
+            Please answer the user's questions based on what you know about the document. 
+            If the question is outside scope of the document, please politely decline. 
+            If you don't know the answer, say `I don't know`.
+
+            Answer polite in Japanese.
+            """
+
         st.session_state.messages = [
             {"role": "system", "content": system_prompt},
             # {
@@ -75,7 +78,13 @@ def main() -> None:
         st.chat_message("user").write(prompt)
 
         load_data()
-        prompt += f"以下のCSVからマークダウンに変換された添付ファイルを参照してください。{convert_df_to_markdown(st.session_state.file_df)}"
+        prompt += f"""
+            See attached data below.
+            Answer polite in Japanese.
+            
+            ### data ###
+            {convert_df_to_markdown(st.session_state.file_df)}
+        """
         response = st.session_state.query_engine.query(prompt)
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.chat_message("assistant").write(f"{response}")

@@ -9,12 +9,14 @@ def convert_df_to_markdown(input_df: pd.DataFrame) -> str:
 
 
 def load_data() -> None:
-    file_path = st.session_state.file_uploader
+    file_paths = st.session_state.file_uploader
 
     try:
-        st.session_state.file_df = pd.read_csv(
-            file_path, header=2, encoding="utf-8-sig"
-        )
+        file_dfs = [
+            pd.read_csv(file_path, header=2, encoding="utf-8-sig")
+            for file_path in file_paths
+        ]
+        st.session_state.file_df = pd.concat(file_dfs, ignore_index=True)
     except FileNotFoundError:
         st.error("ファイルのアップロードに失敗しました。")
         st.button("最初の画面に戻る")
@@ -34,7 +36,7 @@ def load_index():
 
 
 def main() -> None:
-    st.markdown("### 運用施策回答BOT")
+    st.markdown("# Adviser")
 
     if "messages" not in st.session_state:
         st.session_state.messages = [
@@ -52,14 +54,30 @@ def main() -> None:
         ]
 
     with st.chat_message("assistant"):
-        st.write(
-            "ファイルをアップロードして、変動要因の箇所を示した上で質問してください。"
-        )
+        st.write("数値変動が発生しているCSVファイルをアップロードしてください。")
         st.file_uploader(
             "",
             type=["csv"],
+            accept_multiple_files=True,
             key="file_uploader",
             label_visibility="collapsed",
+        )
+
+    with st.chat_message("assistant"):
+        st.write("以下のフォーマットに沿った質問を入力してください。")
+        st.code(
+            """
+            案件名：〇〇
+            比較時期：~~~に対して~~~
+            質問：指標〇〇をこの時期あるいはこの数値まで上げたい。
+            """
+        )
+        st.code(
+            """
+            案件名：大阪ガスマーケティング
+            比較時期：8/29-9/1と8/25-8/28
+            質問：フレーズ一致KW「かんたくん」、完全一致KW「かんたくん」において、最上部impシェア損失率が低下した要因は何か
+            """
         )
 
     if "query_engine" not in st.session_state:
@@ -82,9 +100,9 @@ def main() -> None:
             ### data ###
             {convert_df_to_markdown(st.session_state.file_df)}
         """
-        response = st.session_state.query_engine.query(prompt)
+        response = st.session_state.query_engine.query(prompt).response
         st.session_state.messages.append({"role": "assistant", "content": response})
-        st.chat_message("assistant").write(f"{response}")
+        st.chat_message("assistant").write(response)
 
 
 if __name__ == "__main__":

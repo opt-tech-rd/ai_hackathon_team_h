@@ -95,7 +95,7 @@ def main() -> None:
         load_data()
         prompt += f"""
             See attached data below.
-            Generate multiple bullet points of factors and measures only.
+            Generate multiple bullet points only regarding factors and measures.
             Answer polite in Japanese.
             
             ### data ###
@@ -113,8 +113,12 @@ def main() -> None:
                         "以下の回答について、さらに質問することができます。" + "\n"
                     )
                     st.write("さらに深ぼるか、新たに質問することができます。")
-                    for bullet_point in bullet_points[1:]:
-                        st.button(bullet_point, on_click=click_button(bullet_point))
+                    for i, bullet_point in enumerate(bullet_points[1:]):
+                        st.button(
+                            bullet_point,
+                            key=f"{i}",
+                            on_click=click_button(bullet_point),
+                        )
 
                     assistant_response += f"- {st.session_state.bullet_point}\n"
                     st.session_state.messages.append(

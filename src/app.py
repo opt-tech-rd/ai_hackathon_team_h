@@ -4,8 +4,16 @@ import pandas as pd
 from llama_index.core import StorageContext, load_index_from_storage
 
 
-def convert_df_to_markdown(input_df: pd.DataFrame) -> str:
-    return input_df.to_markdown(index=False)
+def load_index():
+    print("Loading index...")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dir_path = os.path.join(base_dir, ".kb")
+
+    storage_context = StorageContext.from_defaults(persist_dir=dir_path)
+    index = load_index_from_storage(storage_context)
+    query_engine = index.as_query_engine()
+    print("Done.")
+    return query_engine
 
 
 def load_data() -> None:
@@ -23,16 +31,8 @@ def load_data() -> None:
         st.stop()
 
 
-def load_index():
-    print("Loading index...")
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dir_path = os.path.join(base_dir, ".kb")
-
-    storage_context = StorageContext.from_defaults(persist_dir=dir_path)
-    index = load_index_from_storage(storage_context)
-    query_engine = index.as_query_engine()
-    print("Done.")
-    return query_engine
+def click_button(bullet_point: str) -> None:
+    st.session_state.bullet_point = bullet_point
 
 
 def main() -> None:
@@ -95,14 +95,43 @@ def main() -> None:
         load_data()
         prompt += f"""
             See attached data below.
+            Generate multiple bullet points of factors and measures only.
             Answer polite in Japanese.
             
             ### data ###
-            {convert_df_to_markdown(st.session_state.file_df)}
-        """
-        response = st.session_state.query_engine.query(prompt).response
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.chat_message("assistant").write(response)
+            {st.session_state.file_df.to_markdown(index=False)}
+            """
+
+        with st.spinner("回答を生成中..."):
+            response = st.session_state.query_engine.query(prompt).response
+
+            # responseが箇条書きの場合を想定
+            bullet_points = response.split("-")
+            if len(bullet_points) > 1:
+                with st.chat_message("assistant"):
+                    assistant_response = (
+                        "以下の回答について、さらに質問することができます。" + "\n"
+                    )
+                    st.write("さらに深ぼるか、新たに質問することができます。")
+                    for bullet_point in bullet_points[1:]:
+                        st.button(bullet_point, on_click=click_button(bullet_point))
+
+                    assistant_response += f"- {st.session_state.bullet_point}\n"
+                    st.session_state.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": assistant_response,
+                        }
+                    )
+
+            else:
+                st.chat_message("assistant").write(response)
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response,
+                    }
+                )
 
 
 if __name__ == "__main__":

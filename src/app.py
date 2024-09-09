@@ -37,21 +37,18 @@ def main() -> None:
     st.markdown("### 運用施策回答BOT")
 
     if "messages" not in st.session_state:
-        system_prompt = """
-            Your purpose is to answer questions about specific documents only. 
-            Please answer the user's questions based on what you know about the document. 
-            If the question is outside scope of the document, please politely decline. 
-            If you don't know the answer, say `I don't know`.
-
-            Answer polite in Japanese.
-            """
-
         st.session_state.messages = [
-            {"role": "system", "content": system_prompt},
-            # {
-            #     "role": "assistant",
-            #     "content": "ファイルをアップロードして、要因分析に関する質問をしてください。",
-            # },
+            {
+                "role": "system",
+                "content": """
+                    Your purpose is to answer questions about specific documents only. 
+                    Please answer the user's questions based on what you know about the document. 
+                    If the question is outside scope of the document, please politely decline. 
+                    If you don't know the answer, say `I don't know`.
+
+                    Answer polite in Japanese.
+                    """,
+            },
         ]
 
     with st.chat_message("assistant"):

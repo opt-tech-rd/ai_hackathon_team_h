@@ -3,7 +3,11 @@ import os
 import sys
 from shutil import rmtree
 
-from llama_index.core import Settings, SimpleDirectoryReader, TreeIndex
+from llama_index.core import (
+    Settings,
+    SimpleDirectoryReader,
+    TreeIndex,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 

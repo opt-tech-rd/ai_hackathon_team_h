@@ -1,6 +1,7 @@
 import os
 import streamlit as st
 import pandas as pd
+from functools import partial
 from llama_index.core import StorageContext, load_index_from_storage
 
 
@@ -31,8 +32,16 @@ def load_data() -> None:
         st.stop()
 
 
-def click_button(bullet_point: str) -> None:
-    st.session_state.bullet_point = bullet_point
+def click_button(bullet_point: str):
+    print(bullet_point)
+    assistant_response = "以下の回答について、さらに質問することができます。" + "\n"
+    assistant_response += f"- {bullet_point}\n"
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": assistant_response,
+        }
+    )
 
 
 def main() -> None:
@@ -72,13 +81,6 @@ def main() -> None:
             質問：指標〇〇をこの時期あるいはこの数値まで上げたい。
             """
         )
-        st.code(
-            """
-            案件名：大阪ガスマーケティング
-            比較時期：8/29-9/1と8/25-8/28
-            質問：フレーズ一致KW「かんたくん」、完全一致KW「かんたくん」において、最上部impシェア損失率が低下した要因は何か
-            """
-        )
 
     if "query_engine" not in st.session_state:
         st.session_state.query_engine = load_index()
@@ -106,27 +108,20 @@ def main() -> None:
             response = st.session_state.query_engine.query(prompt).response
 
             # responseが箇条書きの場合を想定
+            # 現状、一番上のradioボタンしか取得できていないので、この部分を改善したい。
             bullet_points = response.split("-")
             if len(bullet_points) > 1:
                 with st.chat_message("assistant"):
-                    assistant_response = (
-                        "以下の回答について、さらに質問することができます。" + "\n"
-                    )
-                    st.write("さらに深ぼるか、新たに質問することができます。")
-                    for i, bullet_point in enumerate(bullet_points[1:]):
-                        st.button(
-                            bullet_point,
-                            key=f"{i}",
-                            on_click=click_button(bullet_point),
+                    st.write("選択項目をさらに深ぼるか、新たに質問することができます。")
+                    with st.form(key="bullet_points_form"):
+                        bullet_point = st.radio(
+                            "",
+                            bullet_points[1:],
+                            key="bullet_points_radio",
                         )
-
-                    assistant_response += f"- {st.session_state.bullet_point}\n"
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": assistant_response,
-                        }
-                    )
+                        st.form_submit_button(
+                            "決定", on_click=partial(click_button, bullet_point)
+                        )
 
             else:
                 st.chat_message("assistant").write(response)
